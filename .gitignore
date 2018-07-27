@@ -1,0 +1,7 @@
+# Visual Studio 2017 cache/options directory
+/.vs/
+*.user
+
+# Build results
+/*/bin/
+/*/obj/

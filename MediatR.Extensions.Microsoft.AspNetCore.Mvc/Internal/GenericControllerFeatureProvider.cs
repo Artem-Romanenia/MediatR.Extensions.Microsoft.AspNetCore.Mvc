@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MediatR;
+using MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +39,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
                     {
                         if (!genericControllerType.IsGenericTypeDefinition)
                         {
-                            throw new ArgumentException("The type must be generic type definition", nameof(genericControllerType));
+                            throw new InvalidTypeException("Type must be generic type definition.", requiredBaseType, genericControllerType);
                         }
 
                         feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
@@ -48,7 +49,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
                     inspectedType = inspectedType.BaseType;
                 }
 
-                throw new ArgumentException($"The type must be a class and derive from {requiredBaseType.Name}", nameof(genericControllerType));
+                throw new InvalidTypeException($"Type must be a class and derive from required type.", requiredBaseType, genericControllerType);
             }
         }
     }

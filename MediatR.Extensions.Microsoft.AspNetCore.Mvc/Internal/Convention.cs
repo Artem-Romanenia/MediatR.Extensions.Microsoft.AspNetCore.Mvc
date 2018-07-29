@@ -8,10 +8,12 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
 {
     internal class Convention : IControllerModelConvention
     {
+        private readonly Func<Type, string> _provideControllerName;
         private readonly Func<Type, RequestType> _classifyRequestType;
 
-        public Convention(Func<Type, RequestType> classifyRequestType)
+        public Convention(Func<Type, string> provideControllerName, Func<Type, RequestType> classifyRequestType)
         {
+            _provideControllerName = provideControllerName;
             _classifyRequestType = classifyRequestType;
         }
 
@@ -34,7 +36,9 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
 
         private void ApplyInner(ControllerModel controller)
         {
-            controller.ControllerName = controller.ControllerType.GenericTypeArguments[0].Name;
+            controller.ControllerName = _provideControllerName == null
+                ? controller.ControllerType.GenericTypeArguments[0].Name
+                : _provideControllerName(controller.ControllerType.GenericTypeArguments[0]);
 
             if (_classifyRequestType == null)
                 return;

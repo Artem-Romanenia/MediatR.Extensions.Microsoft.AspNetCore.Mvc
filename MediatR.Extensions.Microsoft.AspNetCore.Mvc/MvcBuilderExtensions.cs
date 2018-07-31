@@ -14,7 +14,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// <param name="services">Services</param>
         /// <returns></returns>
         public static IMvcBuilder AddMediatrMvcGenericController(this IMvcBuilder builder, IServiceCollection services)
-            => AddMediatrMvcGenericController(builder, services, typeof(MediatrMvcGenericController<,>));
+            => AddMediatrMvcGenericController(builder, services, (Func<Type, Type>)null);
 
         /// <summary>
         /// Creates constructed MediatR generic controller class for each registered <see cref="IRequestHandler{TRequest,TResponse}"/> service.

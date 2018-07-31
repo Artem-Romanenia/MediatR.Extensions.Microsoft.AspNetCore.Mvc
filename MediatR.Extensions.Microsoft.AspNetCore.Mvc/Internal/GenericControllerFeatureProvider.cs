@@ -28,6 +28,12 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
                 var requestType = service.ServiceType.GenericTypeArguments[0];
                 var responseType = service.ServiceType.GenericTypeArguments[1];
 
+                if (_provideGenericControllerType == null)
+                {
+                    feature.Controllers.Add(typeof(MediatrMvcGenericController<,>).MakeGenericType(requestType, responseType).GetTypeInfo());
+                    continue;
+                }
+
                 var genericControllerType = _provideGenericControllerType(requestType);
 
                 var requiredBaseType = typeof(MediatrMvcGenericController<,>);
@@ -43,7 +49,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
                         }
 
                         feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
-                        return;
+                        break;
                     }
 
                     inspectedType = inspectedType.BaseType;

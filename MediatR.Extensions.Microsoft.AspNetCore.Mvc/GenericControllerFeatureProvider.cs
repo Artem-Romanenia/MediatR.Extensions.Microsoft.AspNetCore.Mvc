@@ -69,9 +69,9 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             {
                 foreach (var action in controller.DeclaredMethods)
                 {
-                    var args = action.CustomAttributes.FirstOrDefault(a => a.AttributeType == typeof(HandlesRequestAttribute))?.ConstructorArguments;
+                    var attr = action.GetCustomAttributes().FirstOrDefault(a => a.GetType() == typeof(HandlesRequestAttribute)) as HandlesRequestAttribute;
 
-                    if (args != null && args.Any(a => (Type)a.Value == requestType))
+                    if (attr != null && attr.RequestType == requestType)
                         return true;
                 }
             }

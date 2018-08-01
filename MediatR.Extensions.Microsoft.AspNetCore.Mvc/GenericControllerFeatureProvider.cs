@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MediatR;
+using MediatR.Extensions.Microsoft.AspNetCore.Mvc;
 using MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -31,29 +32,51 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                 var requiredBaseType = typeof(MediatrMvcGenericController<,>);
                 var inspectedType = genericControllerType;
 
-                while (inspectedType != null && inspectedType != typeof(object))
+                while (true)
                 {
+                    if (inspectedType == null || inspectedType == typeof(object))
+                        throw new InvalidTypeException("Type must be a class and derive from required type.", requiredBaseType, genericControllerType);
+
                     if (inspectedType.IsGenericType && requiredBaseType == inspectedType.GetGenericTypeDefinition())
                     {
                         if (!genericControllerType.IsGenericTypeDefinition)
-                        {
                             throw new InvalidTypeException("Type must be generic type definition.", requiredBaseType, genericControllerType);
-                        }
 
-                        feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
+                        if (!ShouldSkip(requestType) && !ShouldSkipInner(feature.Controllers, requestType))
+                            feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
+
                         break;
                     }
 
                     inspectedType = inspectedType.BaseType;
                 }
-
-                throw new InvalidTypeException($"Type must be a class and derive from required type.", requiredBaseType, genericControllerType);
             }
         }
 
-        public virtual Type ProvideGenericControllerType(Type requestType)
+        protected virtual Type ProvideGenericControllerType(Type requestType)
         {
             return typeof(MediatrMvcGenericController<,>);
+        }
+
+        protected virtual bool ShouldSkip(Type requestType)
+        {
+            return false;
+        }
+
+        private bool ShouldSkipInner(IList<TypeInfo> controllers, Type requestType)
+        {
+            foreach (var controller in controllers)
+            {
+                foreach (var action in controller.DeclaredMethods)
+                {
+                    var args = action.CustomAttributes.FirstOrDefault(a => a.AttributeType == typeof(HandlesRequestAttribute))?.ConstructorArguments;
+
+                    if (args != null && args.Any(a => (Type)a.Value == requestType))
+                        return true;
+                }
+            }
+
+            return false;
         }
     }
 }

@@ -25,12 +25,12 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             }
         }
 
-        public virtual string ProvideControllerName(Type requestType)
+        protected virtual string ProvideControllerName(Type requestType)
         {
             return requestType.Name;
         }
 
-        public virtual RequestType? ClassifyRequestType(Type requestType)
+        protected virtual RequestType? ClassifyRequestType(Type requestType)
         {
             return null;
         }

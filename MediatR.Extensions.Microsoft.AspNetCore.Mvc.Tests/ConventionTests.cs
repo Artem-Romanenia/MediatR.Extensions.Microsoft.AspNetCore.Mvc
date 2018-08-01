@@ -1,5 +1,4 @@
 ﻿using Mediatr.Extensions.Microsoft.AspNetCore.Mvc;
-using Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -13,27 +12,19 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
     [TestClass]
     public class ConventionTests
     {
-        private Func<Type, string> _provideControllerName;
-        private Func<Type, RequestType> _classifyRequestTypeQuery;
-        private Func<Type, RequestType> _classifyRequestTypeCommand;
-        private Func<Type, RequestType> _classifyRequestTypeCommandDelete;
-
-        public ConventionTests()
+        private readonly Func<Type, string> _provideControllerName = (requestType) =>
         {
-            _provideControllerName = (requestType) =>
+            if (requestType.Name.EndsWith("Request"))
             {
-                if (requestType.Name.EndsWith("Request"))
-                {
-                    return requestType.Name.Replace("Request", string.Empty);
-                }
+                return requestType.Name.Replace("Request", string.Empty);
+            }
 
-                return requestType.Name;
-            };
+            return requestType.Name;
+        };
+        private readonly Func<Type, RequestType> _classifyRequestTypeQuery = (requestType) => RequestType.Query;
+        private readonly Func<Type, RequestType> _classifyRequestTypeCommand = (requestType) => RequestType.Command;
+        private readonly Func<Type, RequestType> _classifyRequestTypeCommandDelete = (requestType) => RequestType.DeleteCommand;
 
-            _classifyRequestTypeQuery = (requestType) => RequestType.Query;
-            _classifyRequestTypeCommand = (requestType) => RequestType.Command;
-            _classifyRequestTypeCommandDelete = (requestType) => RequestType.DeleteCommand;
-        }
 
         [TestMethod]
         public void ControllerNameSetCorrectly()
@@ -45,7 +36,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             {
                 var controllerModel = GetControllerModel();
 
-                var convention = new Convention(@case.callback, null);
+                var convention = new ExtendedConvention(@case.callback, null);
                 convention.Apply(controllerModel);
                 Assert.AreEqual(@case.Name, controllerModel.ControllerName);
             }
@@ -59,12 +50,12 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 new { Verb = "POST", callback = _classifyRequestTypeCommand, existingConstraints = new string[0] },
                 new { Verb = "GET", callback = _classifyRequestTypeQuery, existingConstraints = new [] { "DELETE" } },
                 new { Verb = "POST", callback = _classifyRequestTypeCommand, existingConstraints = new [] { "DELETE" } },
-                new { Verb = "DELETE", callback = _classifyRequestTypeCommand, existingConstraints = new [] { "DELETE" } },
+                new { Verb = "DELETE", callback = _classifyRequestTypeCommandDelete, existingConstraints = new [] { "DELETE" } },
             })
             {
                 var controllerModel = GetControllerModel(@case.existingConstraints);
 
-                var convention = new Convention(null, @case.callback);
+                var convention = new ExtendedConvention(null, @case.callback);
                 convention.Apply(controllerModel);
                 Assert.AreEqual(1, controllerModel.Actions.Count);
 
@@ -90,7 +81,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             var actionModel = new ActionModel(typeof(MediatrMvcGenericController<GetTestDataRequest, string>).GetMethod("Index"), new List<object>());
             var selectorModel = new SelectorModel();
 
-            if (httpMethods != null && httpMethods.Count() > 0)
+            if (httpMethods != null && httpMethods.Any())
             {
                 selectorModel.ActionConstraints.Add(new HttpMethodActionConstraint(httpMethods));
             }
@@ -99,5 +90,33 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             controllerModel.Actions.Add(actionModel);
             return controllerModel;
         }
+
+        #region Dummies
+        private class ExtendedConvention : Convention
+        {
+            private readonly Func<Type, string> _provideControllerName;
+            private readonly Func<Type, RequestType> _classifyRequestTypeQuery;
+
+            public ExtendedConvention(Func<Type, string> provideControllerName, Func<Type, RequestType> classifyRequestTypeQuery)
+            {
+                _provideControllerName = provideControllerName;
+                _classifyRequestTypeQuery = classifyRequestTypeQuery;
+            }
+
+            protected override string ProvideControllerName(Type requestType)
+            {
+                return _provideControllerName?.Invoke(requestType) ?? base.ProvideControllerName(requestType);
+            }
+
+            protected override RequestType? ClassifyRequestType(Type requestType)
+            {
+                return _classifyRequestTypeQuery?.Invoke(requestType) ?? base.ClassifyRequestType(requestType);
+            }
+        }
+
+        private class GetTestDataRequest : IRequest<string>
+        {
+        }
+        #endregion
     }
 }

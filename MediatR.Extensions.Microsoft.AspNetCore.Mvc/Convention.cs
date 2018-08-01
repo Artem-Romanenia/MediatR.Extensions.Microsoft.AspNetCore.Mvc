@@ -4,19 +4,10 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Internal;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
+namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 {
-    internal class Convention : IControllerModelConvention
+    public class Convention : IControllerModelConvention
     {
-        private readonly Func<Type, string> _provideControllerName;
-        private readonly Func<Type, RequestType> _classifyRequestType;
-
-        public Convention(Func<Type, string> provideControllerName, Func<Type, RequestType> classifyRequestType)
-        {
-            _provideControllerName = provideControllerName;
-            _classifyRequestType = classifyRequestType;
-        }
-
         public void Apply(ControllerModel controller)
         {
             var requiredBaseType = typeof(MediatrMvcGenericController<,>);
@@ -34,17 +25,26 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
             }
         }
 
+        public virtual string ProvideControllerName(Type requestType)
+        {
+            return requestType.Name;
+        }
+
+        public virtual RequestType? ClassifyRequestType(Type requestType)
+        {
+            return null;
+        }
+
         private void ApplyInner(ControllerModel controller)
         {
-            controller.ControllerName = _provideControllerName == null
-                ? controller.ControllerType.GenericTypeArguments[0].Name
-                : _provideControllerName(controller.ControllerType.GenericTypeArguments[0]);
+            controller.ControllerName = ProvideControllerName(controller.ControllerType.GenericTypeArguments[0]);
 
-            if (_classifyRequestType == null)
+            var requestType = ClassifyRequestType(controller.ControllerType.GenericTypeArguments[0]);
+
+            if (!requestType.HasValue)
                 return;
 
-            var requestType = _classifyRequestType(controller.ControllerType.GenericTypeArguments[0]);
-            var requestTypeVerbs = requestType.GetVerbs();
+            var requestTypeVerbs = requestType.Value.GetVerbs();
 
             foreach(var action in controller.Actions)
             {

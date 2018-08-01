@@ -8,17 +8,15 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
+namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 {
-    internal class GenericControllerFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
+    public class GenericControllerFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
     {
         private readonly IServiceCollection _services;
-        private readonly Func<Type, Type> _provideGenericControllerType;
 
-        public GenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType)
+        public GenericControllerFeatureProvider(IServiceCollection services)
         {
             _services = services;
-            _provideGenericControllerType = provideGenericControllerType;
         }
 
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
@@ -28,13 +26,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
                 var requestType = service.ServiceType.GenericTypeArguments[0];
                 var responseType = service.ServiceType.GenericTypeArguments[1];
 
-                if (_provideGenericControllerType == null)
-                {
-                    feature.Controllers.Add(typeof(MediatrMvcGenericController<,>).MakeGenericType(requestType, responseType).GetTypeInfo());
-                    continue;
-                }
-
-                var genericControllerType = _provideGenericControllerType(requestType);
+                var genericControllerType = ProvideGenericControllerType(requestType);
 
                 var requiredBaseType = typeof(MediatrMvcGenericController<,>);
                 var inspectedType = genericControllerType;
@@ -57,6 +49,11 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
 
                 throw new InvalidTypeException($"Type must be a class and derive from required type.", requiredBaseType, genericControllerType);
             }
+        }
+
+        public virtual Type ProvideGenericControllerType(Type requestType)
+        {
+            return typeof(MediatrMvcGenericController<,>);
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                         if (!genericControllerType.IsGenericTypeDefinition)
                             throw new InvalidTypeException("Type must be generic type definition.", requiredBaseType, genericControllerType);
 
-                        if (!ShouldSkip(requestType) && !ShouldSkipInner(feature.Controllers, requestType))
+                        if (!ShouldSkip(requestType) && !ShouldSkipInternal(feature.Controllers, requestType))
                             feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
 
                         break;
@@ -63,7 +63,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             return false;
         }
 
-        private bool ShouldSkipInner(IList<TypeInfo> controllers, Type requestType)
+        private bool ShouldSkipInternal(IList<TypeInfo> controllers, Type requestType)
         {
             foreach (var controller in controllers)
             {
@@ -73,6 +73,12 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 
                     if (attr != null && attr.RequestType == requestType)
                         return true;
+
+                    foreach(var param in action.GetParameters())
+                    {
+                        if (param.ParameterType == requestType)
+                            return true;
+                    }
                 }
             }
 

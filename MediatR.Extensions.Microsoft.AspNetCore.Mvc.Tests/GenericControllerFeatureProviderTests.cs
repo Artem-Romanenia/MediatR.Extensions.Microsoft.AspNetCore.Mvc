@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Mediatr.Extensions.Microsoft.AspNetCore.Mvc;
@@ -82,6 +83,27 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             }
         }
 
+        [TestMethod]
+        public void ControllerGenerationSkippedWhenNeeded()
+        {
+            foreach(var @case in new[] {
+                new { controllerType = typeof(ControllerWithHandledRequest), requestToBeSkipped = typeof(GetTestDataRequest3) },
+                new { controllerType = typeof(ControllerWithHandledRequestAttr), requestToBeSkipped = typeof(GetTestDataRequest2) }
+            })
+            {
+                var services = GetServiceCollection();
+                var featureProvider = new GenericControllerFeatureProvider(services);
+                var controllerFeature = new ControllerFeature();
+
+                controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
+
+                featureProvider.PopulateFeature(null, controllerFeature);
+
+                Assert.AreEqual(3, controllerFeature.Controllers.Count);
+                Assert.IsTrue(controllerFeature.Controllers.All(c => !c.IsGenericType || c.GenericTypeArguments[0] != @case.requestToBeSkipped));
+            }
+        }
+
         private IServiceCollection GetServiceCollection()
         {
             var services = new ServiceCollection();
@@ -114,8 +136,29 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             where TRequest : IRequest<TResponse>
         {
             public ExtendedMediatrMvcGenericController(IMediator mediator) : base(mediator)
+            { }
+        }
+
+        private class ControllerWithHandledRequest : Controller
+        {
+            public ControllerWithHandledRequest()
+            { }
+
+            public IActionResult RandomAction(GetTestDataRequest3 request)
             {
-                
+                return new EmptyResult();
+            }
+        }
+
+        private class ControllerWithHandledRequestAttr : Controller
+        {
+            public ControllerWithHandledRequestAttr()
+            { }
+
+            [HandlesRequest(typeof(GetTestDataRequest2))]
+            public IActionResult RandomAction()
+            {
+                return new EmptyResult();
             }
         }
 

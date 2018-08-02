@@ -11,13 +11,20 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 {
+    /// <summary>
+    /// Provides constructed generic controller for every <see cref="IRequest{TResponse}"/> previously registered in <see cref="IServiceCollection"/>.
+    /// </summary>
     public class GenericControllerFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
     {
         private readonly IServiceCollection _services;
+        private readonly Settings _settings;
 
-        public GenericControllerFeatureProvider(IServiceCollection services)
+        public GenericControllerFeatureProvider(IServiceCollection services, Action<Settings> applySettings = null)
         {
             _services = services;
+            _settings = new Settings();
+
+            applySettings?.Invoke(_settings);
         }
 
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
@@ -53,11 +60,21 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             }
         }
 
+        /// <summary>
+        /// Returns generic controller type which should be responsible for handling given request type.
+        /// </summary>
+        /// <param name="requestType"><see cref="IRequest{TResponse}"/> to be handled by the provided controller type.</param>
+        /// <returns></returns>
         protected virtual Type ProvideGenericControllerType(Type requestType)
         {
             return typeof(MediatrMvcGenericController<,>);
         }
 
+        /// <summary>
+        /// Defines if constructed generic controller should be created for the given <see cref="IRequest{TResponse}"/>.
+        /// </summary>
+        /// <param name="requestType"><see cref="IRequest{TResponse}"/> under consideration.</param>
+        /// <returns></returns>
         protected virtual bool ShouldSkip(Type requestType)
         {
             return false;
@@ -69,20 +86,35 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             {
                 foreach (var action in controller.DeclaredMethods)
                 {
-                    var attr = action.GetCustomAttributes().FirstOrDefault(a => a.GetType() == typeof(HandlesRequestAttribute)) as HandlesRequestAttribute;
-
-                    if (attr != null && attr.RequestType == requestType)
-                        return true;
-
-                    foreach(var param in action.GetParameters())
+                    if (_settings.DiscoverHandledRequestsByAttribute)
                     {
-                        if (param.ParameterType == requestType)
+                        var attr = action.GetCustomAttributes().FirstOrDefault(a => a.GetType() == typeof(HandlesRequestAttribute)) as HandlesRequestAttribute;
+
+                        if (attr != null && attr.RequestType == requestType)
                             return true;
+                    }
+
+                    if (_settings.DiscoverHandledRequestsByActionParams)
+                    {
+                        foreach (var param in action.GetParameters())
+                        {
+                            if (param.ParameterType == requestType)
+                                return true;
+                        }
                     }
                 }
             }
 
             return false;
+        }
+
+        public class Settings
+        {
+            internal Settings()
+            { }
+
+            public bool DiscoverHandledRequestsByAttribute { get; set; }
+            public bool DiscoverHandledRequestsByActionParams { get; set; }
         }
     }
 }

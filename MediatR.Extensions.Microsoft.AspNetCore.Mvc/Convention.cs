@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using MediatR;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Internal;
 
 namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 {
+    /// <summary>
+    /// Default MediatR Mvc controller convention.
+    /// </summary>
     public class Convention : IControllerModelConvention
     {
         public void Apply(ControllerModel controller)
@@ -25,11 +29,21 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             }
         }
 
+        /// <summary>
+        /// Provides controller name based on the <see cref="IRequest{TResponse}"/> to be handled by this controller.
+        /// </summary>
+        /// <param name="requestType"><see cref="IRequest{TResponse}"/> to be handled.</param>
+        /// <returns></returns>
         protected virtual string ProvideControllerName(Type requestType)
         {
             return requestType.Name;
         }
 
+        /// <summary>
+        /// Classifies request type
+        /// </summary>
+        /// <param name="requestType"><see cref="IRequest{TResponse}"/> to be classified.</param>
+        /// <returns></returns>
         protected virtual RequestType? ClassifyRequestType(Type requestType)
         {
             return null;

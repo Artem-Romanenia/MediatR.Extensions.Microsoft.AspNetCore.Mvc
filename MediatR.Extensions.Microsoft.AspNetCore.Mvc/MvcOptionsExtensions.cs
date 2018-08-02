@@ -1,7 +1,4 @@
-﻿using System;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
@@ -12,7 +9,6 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// Adds default MediatR Mvc convention.
         /// </summary>
         /// <param name="options">options</param>
-        /// so that it can be constrained to appropriate Http Verb.</param>
         public static void AddMediatrMvcConvention(this MvcOptions options)
         {
             options.Conventions.Add(new Convention());
@@ -23,7 +19,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// </summary>
         /// <param name="options">options</param>
         /// <param name="convention">Custom Mediatr Mvc convention.</param>
-        public static void AddMediatrMvcConvention(this MvcOptions options, IControllerModelConvention convention)
+        public static void AddMediatrMvcConvention(this MvcOptions options, Convention convention)
         {
             options.Conventions.Add(convention);
         }

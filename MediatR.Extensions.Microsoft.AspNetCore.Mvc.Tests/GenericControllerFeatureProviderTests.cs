@@ -84,9 +84,35 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         }
 
         [TestMethod]
-        public void ControllerGenerationSkippedWhenNeeded()
+        public void ControllerGenerationSkippedWhenConfigured()
         {
             foreach(var @case in new[] {
+                new { controllerType = typeof(ControllerWithHandledRequest), requestToBeSkipped = typeof(GetTestDataRequest3) },
+                new { controllerType = typeof(ControllerWithHandledRequestAttr), requestToBeSkipped = typeof(GetTestDataRequest2) }
+            })
+            {
+                var services = GetServiceCollection();
+                var featureProvider = new GenericControllerFeatureProvider(services, settings =>
+                {
+                    settings.DiscoverHandledRequestsByActionParams = true;
+                    settings.DiscoverHandledRequestsByAttribute = true;
+                });
+                var controllerFeature = new ControllerFeature();
+
+                controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
+
+                featureProvider.PopulateFeature(null, controllerFeature);
+
+                Assert.AreEqual(3, controllerFeature.Controllers.Count);
+                Assert.IsTrue(controllerFeature.Controllers.All(c => !c.IsGenericType || c.GenericTypeArguments[0] != @case.requestToBeSkipped));
+            }
+        }
+
+        [TestMethod]
+        public void ControllerGenerationNotSkippedByDefault()
+        {
+            foreach (var @case in new[]
+            {
                 new { controllerType = typeof(ControllerWithHandledRequest), requestToBeSkipped = typeof(GetTestDataRequest3) },
                 new { controllerType = typeof(ControllerWithHandledRequestAttr), requestToBeSkipped = typeof(GetTestDataRequest2) }
             })
@@ -98,9 +124,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
 
                 featureProvider.PopulateFeature(null, controllerFeature);
-
-                Assert.AreEqual(3, controllerFeature.Controllers.Count);
-                Assert.IsTrue(controllerFeature.Controllers.All(c => !c.IsGenericType || c.GenericTypeArguments[0] != @case.requestToBeSkipped));
+                Assert.AreEqual(4, controllerFeature.Controllers.Count);
             }
         }
 
@@ -121,7 +145,12 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         {
             private readonly Func<Type, Type> _provideGenericControllerType;
 
-            public ExtendedGenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType) : base(services)
+            public ExtendedGenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType) : base(services,
+                settings =>
+                {
+                    settings.DiscoverHandledRequestsByActionParams = true;
+                    settings.DiscoverHandledRequestsByAttribute = true;
+                })
             {
                 _provideGenericControllerType = provideGenericControllerType;
             }

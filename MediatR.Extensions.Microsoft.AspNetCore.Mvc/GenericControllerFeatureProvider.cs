@@ -17,11 +17,13 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
     public class GenericControllerFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
     {
         private readonly IServiceCollection _services;
+        private readonly Func<Type, Type> _provideGenericControllerType;
         private readonly Settings _settings;
 
-        public GenericControllerFeatureProvider(IServiceCollection services, Action<Settings> applySettings = null)
+        public GenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType = null, Action<Settings> applySettings = null)
         {
             _services = services;
+            _provideGenericControllerType = provideGenericControllerType;
             _settings = new Settings();
 
             applySettings?.Invoke(_settings);
@@ -34,7 +36,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                 var requestType = service.ServiceType.GenericTypeArguments[0];
                 var responseType = service.ServiceType.GenericTypeArguments[1];
 
-                var genericControllerType = ProvideGenericControllerType(requestType);
+                var genericControllerType = _provideGenericControllerType?.Invoke(requestType) ?? typeof(MediatrMvcGenericController<,>);
 
                 var requiredBaseType = typeof(MediatrMvcGenericController<,>);
                 var inspectedType = genericControllerType;
@@ -61,16 +63,6 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         }
 
         /// <summary>
-        /// Returns generic controller type which should be responsible for handling given request type.
-        /// </summary>
-        /// <param name="requestType"><see cref="IRequest{TResponse}"/> to be handled by the provided controller type.</param>
-        /// <returns></returns>
-        protected virtual Type ProvideGenericControllerType(Type requestType)
-        {
-            return typeof(MediatrMvcGenericController<,>);
-        }
-
-        /// <summary>
         /// Defines if constructed generic controller should be created for the given <see cref="IRequest{TResponse}"/>.
         /// </summary>
         /// <param name="requestType"><see cref="IRequest{TResponse}"/> under consideration.</param>
@@ -82,6 +74,9 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 
         private bool ShouldSkipInternal(IList<TypeInfo> controllers, Type requestType)
         {
+            if (!_settings.DiscoverHandledRequestsByAttribute || !_settings.DiscoverHandledRequestsByActionParams)
+                return false;
+
             foreach (var controller in controllers)
             {
                 foreach (var action in controller.DeclaredMethods)
@@ -113,8 +108,8 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             internal Settings()
             { }
 
-            public bool DiscoverHandledRequestsByAttribute { get; set; } = true;
-            public bool DiscoverHandledRequestsByActionParams { get; set; } = true;
+            internal bool DiscoverHandledRequestsByAttribute { get; set; } = true;
+            internal bool DiscoverHandledRequestsByActionParams { get; set; } = true;
 
             public Settings DisableHandledRequestDiscovery()
             {

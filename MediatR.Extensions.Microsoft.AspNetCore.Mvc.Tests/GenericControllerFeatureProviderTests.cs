@@ -37,7 +37,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new ExtendedGenericControllerFeatureProvider(services, @case.callback);
+                var featureProvider = new GenericControllerFeatureProvider(services, @case.callback);
                 var controllerFeature = new ControllerFeature();
 
                 if (@case.shouldFail)
@@ -60,7 +60,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new ExtendedGenericControllerFeatureProvider(services, @case.callback);
+                var featureProvider = new GenericControllerFeatureProvider(services, @case.callback);
                 var controllerFeature = new ControllerFeature();
 
                 featureProvider.PopulateFeature(null, controllerFeature);
@@ -114,7 +114,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services, settings => settings.DisableHandledRequestDiscovery());
+                var featureProvider = new GenericControllerFeatureProvider(services, applySettings: settings => settings.DisableHandledRequestDiscovery());
                 var controllerFeature = new ControllerFeature();
 
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
@@ -122,6 +122,17 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 featureProvider.PopulateFeature(null, controllerFeature);
                 Assert.AreEqual(4, controllerFeature.Controllers.Count);
             }
+        }
+
+        [TestMethod]
+        public void RequestsAreSkippedWhenConfigured()
+        {
+            var services = GetServiceCollection().AddTransient<IRequestHandler<BadTestDataRequest3, object>, BadTestDataRequest3Handler>();
+            var featureProvider = new ExtendedGenericControllerFeatureProvider(services, type => typeof(MediatrMvcGenericController<,>));
+            var controllerFeature = new ControllerFeature();
+
+            featureProvider.PopulateFeature(null, controllerFeature);
+            Assert.AreEqual(3, controllerFeature.Controllers.Count);
         }
 
         private IServiceCollection GetServiceCollection()
@@ -139,21 +150,13 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
 
         private class ExtendedGenericControllerFeatureProvider : GenericControllerFeatureProvider
         {
-            private readonly Func<Type, Type> _provideGenericControllerType;
+            public ExtendedGenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType) : base(services, provideGenericControllerType,
+                settings => settings.DisableHandledRequestDiscovery())
+            { }
 
-            public ExtendedGenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType) : base(services,
-                settings =>
-                {
-                    settings.DiscoverHandledRequestsByActionParams = true;
-                    settings.DiscoverHandledRequestsByAttribute = true;
-                })
+            protected override bool ShouldSkip(Type requestType)
             {
-                _provideGenericControllerType = provideGenericControllerType;
-            }
-
-            protected override Type ProvideGenericControllerType(Type requestType)
-            {
-                return _provideGenericControllerType?.Invoke(requestType) ?? base.ProvideGenericControllerType(requestType);
+                return requestType.Name.StartsWith("Bad");
             }
         }
 
@@ -166,9 +169,6 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
 
         private class ControllerWithHandledRequest : Controller
         {
-            public ControllerWithHandledRequest()
-            { }
-
             public IActionResult RandomAction(GetTestDataRequest3 request)
             {
                 return new EmptyResult();
@@ -201,6 +201,10 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         {
         }
 
+        private class BadTestDataRequest3 : IRequest<object>
+        {
+        }
+
         private class GetTestDataRequestHandler : IRequestHandler<GetTestDataRequest, string>
         {
             public Task<string> Handle(GetTestDataRequest request, CancellationToken cancellationToken)
@@ -220,6 +224,14 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         private class GetTestDataRequest3Handler : IRequestHandler<GetTestDataRequest3, object>
         {
             public Task<object> Handle(GetTestDataRequest3 request, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(new object());
+            }
+        }
+
+        private class BadTestDataRequest3Handler : IRequestHandler<BadTestDataRequest3, object>
+        {
+            public Task<object> Handle(BadTestDataRequest3 request, CancellationToken cancellationToken)
             {
                 return Task.FromResult(new object());
             }

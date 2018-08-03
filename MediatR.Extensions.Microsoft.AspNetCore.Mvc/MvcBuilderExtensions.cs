@@ -20,7 +20,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// </summary>
         /// <param name="builder">builder</param>
         /// <param name="services">Services</param>
-        /// <param name="applySettings">An <see cref="Action{T}"/> to configure MediatR Mvc controller feature provider settings.</param>
+        /// <param name="applySettings">A <see cref="Action{T}"/> to configure MediatR Mvc controller feature provider settings.</param>
         /// <returns></returns>
         public static IMvcBuilder AddMediatrMvcGenericController(this IMvcBuilder builder, IServiceCollection services, Action<GenericControllerFeatureProvider.Settings> applySettings)
         {

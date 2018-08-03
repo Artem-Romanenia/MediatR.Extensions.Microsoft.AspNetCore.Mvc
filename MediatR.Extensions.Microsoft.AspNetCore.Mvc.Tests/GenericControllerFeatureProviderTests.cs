@@ -84,7 +84,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         }
 
         [TestMethod]
-        public void ControllerGenerationSkippedWhenConfigured()
+        public void HandledRequestDiscoveryEnabledByDefault()
         {
             foreach(var @case in new[] {
                 new { controllerType = typeof(ControllerWithHandledRequest), requestToBeSkipped = typeof(GetTestDataRequest3) },
@@ -92,11 +92,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services, settings =>
-                {
-                    settings.DiscoverHandledRequestsByActionParams = true;
-                    settings.DiscoverHandledRequestsByAttribute = true;
-                });
+                var featureProvider = new GenericControllerFeatureProvider(services);
                 var controllerFeature = new ControllerFeature();
 
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
@@ -109,7 +105,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         }
 
         [TestMethod]
-        public void ControllerGenerationNotSkippedByDefault()
+        public void HandledRequestDiscoveryDisabledWhenConfigured()
         {
             foreach (var @case in new[]
             {
@@ -118,7 +114,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services);
+                var featureProvider = new GenericControllerFeatureProvider(services, settings => settings.DisableHandledRequestDiscovery());
                 var controllerFeature = new ControllerFeature();
 
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());

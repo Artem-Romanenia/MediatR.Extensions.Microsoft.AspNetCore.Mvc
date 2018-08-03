@@ -113,8 +113,30 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             internal Settings()
             { }
 
-            public bool DiscoverHandledRequestsByAttribute { get; set; }
-            public bool DiscoverHandledRequestsByActionParams { get; set; }
+            public bool DiscoverHandledRequestsByAttribute { get; set; } = true;
+            public bool DiscoverHandledRequestsByActionParams { get; set; } = true;
+
+            public Settings DisableHandledRequestDiscovery()
+            {
+                DiscoverHandledRequestsByAttribute = false;
+                DiscoverHandledRequestsByActionParams = false;
+
+                return this;
+            }
+
+            public Settings DisableHandledRequestDiscoveryByAttribute()
+            {
+                DiscoverHandledRequestsByAttribute = false;
+
+                return this;
+            }
+
+            public Settings DisableHandledRequestDiscoveryByActionParams()
+            {
+                DiscoverHandledRequestsByActionParams = false;
+
+                return this;
+            }
         }
     }
 }

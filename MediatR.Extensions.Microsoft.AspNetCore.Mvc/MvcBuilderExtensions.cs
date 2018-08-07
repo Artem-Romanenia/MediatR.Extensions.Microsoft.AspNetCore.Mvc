@@ -11,6 +11,16 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// </summary>
         /// <param name="builder">builder</param>
         /// <param name="services">Services</param>
+        /// <param name="applySettings">A <see cref="Action{T}"/> to configure MediatR Mvc controller feature provider settings.</param>
+        /// <returns></returns>
+        public static IMvcBuilder AddMediatrMvcGenericController(this IMvcBuilder builder, IServiceCollection services, Action<GenericControllerFeatureProvider.Settings> applySettings)
+            => AddMediatrMvcGenericController(builder, services, (Type)null, applySettings);
+
+        /// <summary>
+        /// Adds default MediatR Mvc controller feature provider, which creates constructed MediatR generic controller class for each registered <see cref="IRequestHandler{TRequest,TResponse}"/> service.
+        /// </summary>
+        /// <param name="builder">builder</param>
+        /// <param name="services">Services</param>
         /// <param name="genericControllerType">Controller type to be added. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericController{TRequest,TResponse}"/>.</param>
         /// <param name="applySettings">A <see cref="Action{T}"/> to configure MediatR Mvc controller feature provider settings.</param>
         /// <returns></returns>

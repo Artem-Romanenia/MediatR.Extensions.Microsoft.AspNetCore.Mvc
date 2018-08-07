@@ -63,7 +63,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         }
 
         /// <summary>
-        /// Defines if constructed generic controller should be created for the given <see cref="IRequest{TResponse}"/>.
+        /// Defines if generic controller construction should be skipped for the given <see cref="IRequest{TResponse}"/>.
         /// </summary>
         /// <param name="requestType"><see cref="IRequest{TResponse}"/> under consideration.</param>
         /// <returns></returns>

@@ -8,8 +8,12 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
     [AttributeUsage(AttributeTargets.Method)]
     public class HandlesRequestAttribute : Attribute
     {
-        public Type RequestType { get; }
+        internal Type RequestType { get; }
 
+        /// <summary>
+        /// Creates an instance of a class.
+        /// </summary>
+        /// <param name="requestType">An <see cref="IRequest{TResponse}"/> that`s being handled in a decorated Mvc action.</param>
         public HandlesRequestAttribute(Type requestType)
         {
             RequestType = requestType;

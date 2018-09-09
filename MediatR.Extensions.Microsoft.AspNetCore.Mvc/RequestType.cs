@@ -3,13 +3,39 @@ using Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal;
 
 namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 {
+    /// <summary>
+    /// MediatR request type.
+    /// </summary>
     public enum RequestType : byte
     {
+        /// <summary>
+        /// Corresponds to GET http verb.
+        /// </summary>
         [RequestTypeVerb(new[] {"GET"})] Query,
+
+        /// <summary>
+        /// Corresponds to POST http verb.
+        /// </summary>
         [RequestTypeVerb(new[] {"POST"})] Command,
+
+        /// <summary>
+        /// Corresponds to POST http verb.
+        /// </summary>
         [RequestTypeVerb(new[] {"POST"})] CreateCommand,
+
+        /// <summary>
+        /// Corresponds to PUT http verb.
+        /// </summary>
         [RequestTypeVerb(new[] {"PUT"})] UpdateReplaceCommand,
+
+        /// <summary>
+        /// Corresponds to PATCH http verb.
+        /// </summary>
         [RequestTypeVerb(new[] {"PATCH"})] UpdateModifyCommand,
+
+        /// <summary>
+        /// Corresponds to DELETE http verb.
+        /// </summary>
         [RequestTypeVerb(new[] {"DELETE"})] DeleteCommand
     }
 

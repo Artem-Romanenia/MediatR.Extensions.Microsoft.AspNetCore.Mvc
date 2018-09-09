@@ -103,6 +103,9 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             return false;
         }
 
+        /// <summary>
+        /// MediatR Mvc generci controller feature provider settings.
+        /// </summary>
         public class Settings
         {
             internal Settings()
@@ -111,6 +114,10 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             internal bool DiscoverHandledRequestsByAttribute { get; set; } = true;
             internal bool DiscoverHandledRequestsByActionParams { get; set; } = true;
 
+            /// <summary>
+            /// Disables handled request discovery.
+            /// </summary>
+            /// <returns></returns>
             public Settings DisableHandledRequestDiscovery()
             {
                 DiscoverHandledRequestsByAttribute = false;
@@ -119,6 +126,10 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                 return this;
             }
 
+            /// <summary>
+            ///  Disables handled request discovery by <see cref="HandlesRequestAttribute"/>.
+            /// </summary>
+            /// <returns></returns>
             public Settings DisableHandledRequestDiscoveryByAttribute()
             {
                 DiscoverHandledRequestsByAttribute = false;
@@ -126,6 +137,10 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                 return this;
             }
 
+            /// <summary>
+            ///  Disables handled request discovery by action params of reqular Mvc controllers.
+            /// </summary>
+            /// <returns></returns>
             public Settings DisableHandledRequestDiscoveryByActionParams()
             {
                 DiscoverHandledRequestsByActionParams = false;

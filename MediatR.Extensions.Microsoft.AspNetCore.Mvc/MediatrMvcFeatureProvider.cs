@@ -2,33 +2,42 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MediatR;
-using MediatR.Extensions.Microsoft.AspNetCore.Mvc;
 using MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
+namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
 {
     /// <summary>
     /// Provides constructed generic controller for every <see cref="IRequest{TResponse}"/> previously registered in <see cref="IServiceCollection"/>.
     /// </summary>
-    public class GenericControllerFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
+    public class MediatrMvcFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
     {
         private readonly IServiceCollection _services;
         private readonly Func<Type, Type> _provideGenericControllerType;
         private readonly Settings _settings;
 
-        public GenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType = null, Action<Settings> applySettings = null)
+        /// <summary>
+        /// Constructs feature provider instance
+        /// </summary>
+        /// <param name="services">Services</param>
+        /// <param name="provideGenericControllerType">Provides controller type to be added based on <see cref="IRequest{TResponse}"/> type. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericController{TRequest,TResponse}"/>.</param>
+        /// <param name="applySettings">An action that configures generic controller feature provider settings.</param>
+        public MediatrMvcFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType = null, Action<Settings> applySettings = null)
         {
-            _services = services;
+            _services = services ?? throw new ArgumentNullException(nameof(services));
             _provideGenericControllerType = provideGenericControllerType;
             _settings = new Settings();
 
             applySettings?.Invoke(_settings);
         }
 
+        /// <summary>
+        /// Adds constructed generic controller for each MediatR <see cref="IRequest{TResponse}" /> to Mvc controller feature.
+        /// </summary>
+        /// <param name="parts"></param>
+        /// <param name="feature"></param>
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
         {
             foreach (var service in _services.Where(s => s.ServiceType.IsGenericType &&
@@ -38,7 +47,9 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             {
                 var requestType = service.ServiceType.GenericTypeArguments[0];
 
-                var genericControllerType = _provideGenericControllerType?.Invoke(requestType) ?? typeof(MediatrMvcGenericController<,>);
+                var genericControllerType = ProvideGenericControllerType(requestType) ??
+                    _provideGenericControllerType?.Invoke(requestType) ??
+                    typeof(MediatrMvcGenericController<,>);
 
                 var requiredBaseType = typeof(MediatrMvcGenericController<,>);
                 var inspectedType = genericControllerType;
@@ -55,13 +66,16 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 
                         if (!ShouldSkip(requestType) && !ShouldSkipInternal(feature.Controllers, requestType))
                         {
+                            Type constructedGenericControllerType;
+
                             if (service.ServiceType.GenericTypeArguments.Length > 1)
-                            {
-                                var responseType = service.ServiceType.GenericTypeArguments[1];
-                                feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
-                            }
+                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, service.ServiceType.GenericTypeArguments[1]);
+                            else if (genericControllerType.GenericTypeArguments.Length > 1)
+                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, typeof(Unit));
                             else
-                                feature.Controllers.Add(genericControllerType.MakeGenericType(requestType).GetTypeInfo());
+                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType);
+
+                            feature.Controllers.Add(constructedGenericControllerType.GetTypeInfo());
                         }
 
                         break;
@@ -70,6 +84,16 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                     inspectedType = inspectedType.BaseType;
                 }
             }
+        }
+
+        /// <summary>
+        /// Provides controller type to be added based on <see cref="IRequest{TResponse}"/> type. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericController{TRequest,TResponse}"/>.
+        /// </summary>
+        /// <param name="requestType"></param>
+        /// <returns></returns>
+        protected virtual Type ProvideGenericControllerType(Type requestType)
+        {
+            return null;
         }
 
         /// <summary>

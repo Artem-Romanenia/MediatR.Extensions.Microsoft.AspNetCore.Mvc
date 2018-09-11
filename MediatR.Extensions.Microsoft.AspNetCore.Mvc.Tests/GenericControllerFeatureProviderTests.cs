@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Mediatr.Extensions.Microsoft.AspNetCore.Mvc;
+using MediatR.Extensions.Microsoft.AspNetCore.Mvc;
 using MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -37,7 +37,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services, @case.callback);
+                var featureProvider = new MediatrMvcFeatureProvider(services, @case.callback);
                 var controllerFeature = new ControllerFeature();
 
                 if (@case.shouldFail)
@@ -60,7 +60,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services, @case.callback);
+                var featureProvider = new MediatrMvcFeatureProvider(services, @case.callback);
                 var controllerFeature = new ControllerFeature();
 
                 featureProvider.PopulateFeature(null, controllerFeature);
@@ -92,7 +92,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services);
+                var featureProvider = new MediatrMvcFeatureProvider(services);
                 var controllerFeature = new ControllerFeature();
 
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
@@ -114,7 +114,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             })
             {
                 var services = GetServiceCollection();
-                var featureProvider = new GenericControllerFeatureProvider(services, applySettings: settings => settings.DisableHandledRequestDiscovery());
+                var featureProvider = new MediatrMvcFeatureProvider(services, applySettings: settings => settings.DisableHandledRequestDiscovery());
                 var controllerFeature = new ControllerFeature();
 
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
@@ -148,7 +148,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
 
         #region Dummies
 
-        private class ExtendedGenericControllerFeatureProvider : GenericControllerFeatureProvider
+        private class ExtendedGenericControllerFeatureProvider : MediatrMvcFeatureProvider
         {
             public ExtendedGenericControllerFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType) : base(services, provideGenericControllerType,
                 settings => settings.DisableHandledRequestDiscovery())

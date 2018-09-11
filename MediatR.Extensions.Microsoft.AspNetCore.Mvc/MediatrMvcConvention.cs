@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MediatR;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Internal;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
+namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
 {
     /// <summary>
     /// Default MediatR Mvc controller convention.
     /// </summary>
-    public class Convention : IControllerModelConvention
+    public class MediatrMvcConvention : IControllerModelConvention
     {
         public void Apply(ControllerModel controller)
         {
@@ -33,13 +32,19 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// <summary>
         /// Provides controller name based on the <see cref="IRequest{TResponse}"/> to be handled by this controller.
         /// </summary>
-        /// <param name="requestType"><see cref="IRequest{TResponse}"/> to be handled.</param>
-        /// <returns></returns>
+        /// <param name="requestType"><see cref="IRequest{TResponse}"/> for which generic controller is being configured.</param>
+        /// <returns>Controller name.</returns>
         protected virtual string ProvideControllerName(Type requestType)
         {
             return requestType.Name;
         }
 
+        /// <summary>
+        /// Provides action name based on <see cref="MethodInfo"/> of corresponding generic controller action.
+        /// </summary>
+        /// <param name="requestType"><see cref="IRequest{TResponse}"/> for which generic controller is being configured.</param>
+        /// <param name="action"><see cref="MethodInfo"/> of corresponding generic controller action.</param>
+        /// <returns>Action name.</returns>
         protected virtual string ProvideActionName(Type requestType, MethodInfo action)
         {
             return action.Name;
@@ -49,7 +54,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
         /// Classifies request type
         /// </summary>
         /// <param name="requestType"><see cref="IRequest{TResponse}"/> to be classified.</param>
-        /// <returns></returns>
+        /// <returns>Request type.</returns>
         protected virtual RequestType? ClassifyRequestType(Type requestType)
         {
             return null;

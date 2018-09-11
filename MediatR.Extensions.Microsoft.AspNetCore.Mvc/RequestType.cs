@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal;
+﻿using MediatR.Extensions.Microsoft.AspNetCore.Mvc.Internal;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
+namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
 {
     /// <summary>
     /// MediatR request type.
@@ -41,7 +40,7 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 
     internal static class RequestTypeExtensions
     {
-        internal static IEnumerable<string> GetVerbs(this RequestType val)
+        internal static string[] GetVerbs(this RequestType val)
         {
             var type = val.GetType();
             var memberInfo = type.GetMember(val.ToString());

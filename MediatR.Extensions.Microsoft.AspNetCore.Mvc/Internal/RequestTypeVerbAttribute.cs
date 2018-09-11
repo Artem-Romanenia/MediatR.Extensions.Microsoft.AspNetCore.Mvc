@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc.Internal
+namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Internal
 {
     internal class RequestTypeVerbAttribute : Attribute
     {

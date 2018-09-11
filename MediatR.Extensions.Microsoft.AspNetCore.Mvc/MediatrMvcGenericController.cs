@@ -2,7 +2,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
+namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
 {
     /// <summary>
     /// Default MediatR Mvc generic controller.

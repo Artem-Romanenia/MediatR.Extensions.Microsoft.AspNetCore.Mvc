@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using MediatR;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.Internal;
@@ -39,6 +40,11 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
             return requestType.Name;
         }
 
+        protected virtual string ProvideActionName(Type requestType, MethodInfo action)
+        {
+            return action.Name;
+        }
+
         /// <summary>
         /// Classifies request type
         /// </summary>
@@ -51,17 +57,21 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 
         private void ApplyInner(ControllerModel controller)
         {
-            controller.ControllerName = ProvideControllerName(controller.ControllerType.GenericTypeArguments[0]);
+            var type = controller.ControllerType.GenericTypeArguments[0];
 
-            var requestType = ClassifyRequestType(controller.ControllerType.GenericTypeArguments[0]);
+            controller.ControllerName = ProvideControllerName(type);
 
-            if (!requestType.HasValue)
-                return;
-
-            var requestTypeVerbs = requestType.Value.GetVerbs();
+            var requestType = ClassifyRequestType(type);
 
             foreach(var action in controller.Actions)
             {
+                action.ActionName = ProvideActionName(type, action.ActionMethod);
+
+                if (!requestType.HasValue)
+                    continue;
+
+                var requestTypeVerbs = requestType.Value.GetVerbs();
+
                 foreach (var selector in action.Selectors)
                 {
                     var httpMethodActionConstraints = selector.ActionConstraints.Where(c => c.GetType() == typeof(HttpMethodActionConstraint)).Select(c => c as HttpMethodActionConstraint).ToList();

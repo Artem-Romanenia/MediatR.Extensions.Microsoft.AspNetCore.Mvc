@@ -31,10 +31,12 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
 
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
         {
-            foreach (var service in _services.Where(s => s.ServiceType.Name == typeof(IRequestHandler<,>).Name))
+            foreach (var service in _services.Where(s => s.ServiceType.IsGenericType &&
+                (s.ServiceType.GetGenericTypeDefinition() == typeof(IRequestHandler<>) ||
+                s.ServiceType.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
+            ))
             {
                 var requestType = service.ServiceType.GenericTypeArguments[0];
-                var responseType = service.ServiceType.GenericTypeArguments[1];
 
                 var genericControllerType = _provideGenericControllerType?.Invoke(requestType) ?? typeof(MediatrMvcGenericController<,>);
 
@@ -52,7 +54,15 @@ namespace Mediatr.Extensions.Microsoft.AspNetCore.Mvc
                             throw new InvalidTypeException("Type must be generic type definition.", requiredBaseType, genericControllerType);
 
                         if (!ShouldSkip(requestType) && !ShouldSkipInternal(feature.Controllers, requestType))
-                            feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
+                        {
+                            if (service.ServiceType.GenericTypeArguments.Length > 1)
+                            {
+                                var responseType = service.ServiceType.GenericTypeArguments[1];
+                                feature.Controllers.Add(genericControllerType.MakeGenericType(requestType, responseType).GetTypeInfo());
+                            }
+                            else
+                                feature.Controllers.Add(genericControllerType.MakeGenericType(requestType).GetTypeInfo());
+                        }
 
                         break;
                     }

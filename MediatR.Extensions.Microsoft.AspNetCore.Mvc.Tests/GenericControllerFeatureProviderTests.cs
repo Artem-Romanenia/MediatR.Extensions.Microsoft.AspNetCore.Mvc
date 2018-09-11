@@ -51,6 +51,17 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         }
 
         [TestMethod]
+        public void GenericControllerPolymorphicTypeProvisionValidatedCorrectly()
+        {
+            var services = GetServiceCollection();
+            var featureProvider = new ExtendedGenericControllerFeatureProvider2(services, _provideGenericControllerType2);
+            var controllerFeature = new ControllerFeature();
+
+            featureProvider.PopulateFeature(null, controllerFeature);
+            Assert.AreEqual(3, controllerFeature.Controllers.Count);
+        }
+
+        [TestMethod]
         public void GenericControllersConstructedCorrectly()
         {
             foreach (var @case in new[] {
@@ -157,6 +168,21 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             protected override bool ShouldSkip(Type requestType)
             {
                 return requestType.Name.StartsWith("Bad");
+            }
+        }
+
+        private class ExtendedGenericControllerFeatureProvider2 : MediatrMvcFeatureProvider
+        {
+            private readonly Func<Type, Type> _provideGenericControllerType;
+
+            public ExtendedGenericControllerFeatureProvider2(IServiceCollection services, Func<Type, Type> provideGenericControllerType) : base(services)
+            {
+                _provideGenericControllerType = provideGenericControllerType;
+            }
+
+            protected override Type ProvideGenericControllerType(Type requestType)
+            {
+                return _provideGenericControllerType(requestType);
             }
         }
 

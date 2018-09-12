@@ -19,6 +19,12 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions
             this.providedType = providedType;
         }
 
+        public InvalidTypeException(string message, Exception inner, Type requiredType, Type providedType) : base(message, inner)
+        {
+            this.requiredType = requiredType;
+            this.providedType = providedType;
+        }
+
         public override string Message => $"{base.Message}{Environment.NewLine}Provided Type: {providedType.FullName}. Required type: {requiredType.FullName}";
     }
 }

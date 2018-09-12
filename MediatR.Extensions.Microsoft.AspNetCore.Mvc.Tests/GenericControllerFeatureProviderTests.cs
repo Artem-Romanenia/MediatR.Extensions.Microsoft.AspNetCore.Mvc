@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR.Extensions.Microsoft.AspNetCore.Mvc;
 using MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -19,6 +18,9 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         private readonly Func<Type, Type> _provideGenericControllerType2 = type => typeof(MediatrMvcGenericController<,>);
         private readonly Func<Type, Type> _provideGenericControllerTypeConstructed = type => typeof(MediatrMvcGenericController<IRequest<string>, string>);
         private readonly Func<Type, Type> _provideGenericControllerTypeExtended = type => typeof(ExtendedMediatrMvcGenericController<,>);
+        private readonly Func<Type, Type> _provideGenericControllerTypeReverted = type => typeof(RevertedParamsMediatrMvcGenericController<,>);
+        private readonly Func<Type, Type> _provideGenericControllerTypeSingleParam = type => typeof(SingleParamMediatrMvcGenericController<>);
+        private readonly Func<Type, Type> _provideGenericControllerTypeBad = type => typeof(BadMediatrMvcGenericController<,,>);
         private readonly Func<Type, Type> _provideGenericControllerTypeExtendedConstructed = type => typeof(ExtendedMediatrMvcGenericController<IRequest<string>, string>);
         private readonly Func<Type, Type> _provideNonGenericControllerType = type => typeof(Controller);
         private readonly Func<Type, Type> _provideGenericControllerInterface = type => typeof(IMediatrMvcGenericController<>);
@@ -45,7 +47,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 else
                 {
                     featureProvider.PopulateFeature(null, controllerFeature);
-                    Assert.AreEqual(3, controllerFeature.Controllers.Count);
+                    Assert.AreEqual(5, controllerFeature.Controllers.Count);
                 }
             }
         }
@@ -58,7 +60,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             var controllerFeature = new ControllerFeature();
 
             featureProvider.PopulateFeature(null, controllerFeature);
-            Assert.AreEqual(3, controllerFeature.Controllers.Count);
+            Assert.AreEqual(5, controllerFeature.Controllers.Count);
         }
 
         [TestMethod]
@@ -67,7 +69,8 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             foreach (var @case in new[] {
                 new { callback = _provideGenericControllerType, expectedType = typeof(MediatrMvcGenericController<,>) },
                 new { callback = _provideGenericControllerType2, expectedType = typeof(MediatrMvcGenericController<,>) },
-                new { callback = _provideGenericControllerTypeExtended, expectedType = typeof(ExtendedMediatrMvcGenericController<,>) }
+                new { callback = _provideGenericControllerTypeExtended, expectedType = typeof(ExtendedMediatrMvcGenericController<,>) },
+                //new { callback = _provideGenericControllerTypeReverted, expectedType = typeof(RevertedParamsMediatrMvcGenericController<,>) }
             })
             {
                 var services = GetServiceCollection();
@@ -75,7 +78,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 var controllerFeature = new ControllerFeature();
 
                 featureProvider.PopulateFeature(null, controllerFeature);
-                Assert.AreEqual(3, controllerFeature.Controllers.Count);
+                Assert.AreEqual(5, controllerFeature.Controllers.Count);
 
                 Assert.IsTrue(controllerFeature.Controllers.All(c =>
                     c.IsConstructedGenericType && c.GetGenericTypeDefinition() == @case.expectedType));
@@ -91,6 +94,47 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 Assert.IsTrue(controllerFeature.Controllers.Any(c =>
                     c.GenericTypeArguments[0] == typeof(GetTestDataRequest3) &&
                     c.GenericTypeArguments[1] == typeof(object)));
+
+                Assert.IsTrue(controllerFeature.Controllers.Any(c =>
+                    c.GenericTypeArguments[0] == typeof(GetTestDataRequest4) &&
+                    c.GenericTypeArguments[1] == typeof(Unit)));
+
+                Assert.IsTrue(controllerFeature.Controllers.Any(c =>
+                    c.GenericTypeArguments[0] == typeof(GetTestDataRequest5) &&
+                    c.GenericTypeArguments[1] == typeof(Unit)));
+            }
+        }
+
+        [TestMethod]
+        public void GenericControllersConstructedCorrectlyForIRequest()
+        {
+            var services = new ServiceCollection();
+
+            services.AddTransient<IRequestHandler<GetTestDataRequest5, Unit>, GetTestDataRequest5Handler>();
+
+            var featureProvider = new MediatrMvcFeatureProvider(services, _provideGenericControllerTypeSingleParam);
+            var controllerFeature = new ControllerFeature();
+
+            featureProvider.PopulateFeature(null, controllerFeature);
+            Assert.AreEqual(1, controllerFeature.Controllers.Count);
+
+            Assert.IsTrue(controllerFeature.Controllers.All(c =>
+                c.IsConstructedGenericType && c.GetGenericTypeDefinition() == typeof(SingleParamMediatrMvcGenericController<>)));
+        }
+
+        [TestMethod]
+        public void GenericControllersConstructionFailsGracefully()
+        {
+            foreach (var @case in new[] {
+                new { callback = _provideGenericControllerTypeSingleParam, expectedType = typeof(MediatrMvcGenericController<,>) },
+                new { callback = _provideGenericControllerTypeBad, expectedType = typeof(RevertedParamsMediatrMvcGenericController<,>) }
+            })
+            {
+                var services = GetServiceCollection();
+                var featureProvider = new MediatrMvcFeatureProvider(services, @case.callback);
+                var controllerFeature = new ControllerFeature();
+
+                Assert.ThrowsException<InvalidTypeException>(() => featureProvider.PopulateFeature(null, controllerFeature));
             }
         }
 
@@ -110,7 +154,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
 
                 featureProvider.PopulateFeature(null, controllerFeature);
 
-                Assert.AreEqual(3, controllerFeature.Controllers.Count);
+                Assert.AreEqual(5, controllerFeature.Controllers.Count);
                 Assert.IsTrue(controllerFeature.Controllers.All(c => !c.IsGenericType || c.GenericTypeArguments[0] != @case.requestToBeSkipped));
             }
         }
@@ -131,7 +175,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
                 controllerFeature.Controllers.Add(@case.controllerType.GetTypeInfo());
 
                 featureProvider.PopulateFeature(null, controllerFeature);
-                Assert.AreEqual(4, controllerFeature.Controllers.Count);
+                Assert.AreEqual(6, controllerFeature.Controllers.Count);
             }
         }
 
@@ -143,7 +187,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             var controllerFeature = new ControllerFeature();
 
             featureProvider.PopulateFeature(null, controllerFeature);
-            Assert.AreEqual(3, controllerFeature.Controllers.Count);
+            Assert.AreEqual(5, controllerFeature.Controllers.Count);
         }
 
         private IServiceCollection GetServiceCollection()
@@ -153,6 +197,8 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             services.AddTransient<IRequestHandler<GetTestDataRequest, string>, GetTestDataRequestHandler>();
             services.AddTransient<IRequestHandler<GetTestDataRequest2, int>, GetTestDataRequest2Handler>();
             services.AddTransient<IRequestHandler<GetTestDataRequest3, object>, GetTestDataRequest3Handler>();
+            services.AddTransient<IRequestHandler<GetTestDataRequest4, Unit>, GetTestDataRequest4Handler>();
+            services.AddTransient<IRequestHandler<GetTestDataRequest5, Unit>, GetTestDataRequest5Handler>();
 
             return services;
         }
@@ -193,6 +239,29 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             { }
         }
 
+        private class RevertedParamsMediatrMvcGenericController<TResponse, TRequest> : MediatrMvcGenericController<TRequest, TResponse>
+            where TRequest : IRequest<TResponse>
+        {
+            public RevertedParamsMediatrMvcGenericController(IMediator mediator) : base(mediator)
+            { }
+        }
+
+        private class SingleParamMediatrMvcGenericController<TRequest> : MediatrMvcGenericController<TRequest, Unit>
+            where TRequest : IRequest
+        {
+            public SingleParamMediatrMvcGenericController(IMediator mediator) : base(mediator)
+            {
+            }
+        }
+
+        private class BadMediatrMvcGenericController<TRequest, TResponse, TSomethingElse> : MediatrMvcGenericController<TRequest, TResponse>
+            where TRequest : IRequest<TResponse>
+        {
+            public BadMediatrMvcGenericController(IMediator mediator) : base(mediator)
+            {
+            }
+        }
+
         private class ControllerWithHandledRequest : Controller
         {
             public IActionResult RandomAction(GetTestDataRequest3 request)
@@ -227,6 +296,14 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
         {
         }
 
+        private class GetTestDataRequest4 : IRequest<Unit>
+        {
+        }
+
+        private class GetTestDataRequest5 : IRequest
+        {
+        }
+
         private class BadTestDataRequest3 : IRequest<object>
         {
         }
@@ -252,6 +329,22 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests
             public Task<object> Handle(GetTestDataRequest3 request, CancellationToken cancellationToken)
             {
                 return Task.FromResult(new object());
+            }
+        }
+
+        private class GetTestDataRequest4Handler : IRequestHandler<GetTestDataRequest4, Unit>
+        {
+            public Task<Unit> Handle(GetTestDataRequest4 request, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(Unit.Value);
+            }
+        }
+
+        private class GetTestDataRequest5Handler : IRequestHandler<GetTestDataRequest5, Unit>
+        {
+            public Task<Unit> Handle(GetTestDataRequest5 request, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(Unit.Value);
             }
         }
 

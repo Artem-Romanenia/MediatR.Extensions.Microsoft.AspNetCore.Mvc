@@ -57,7 +57,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
                 while (true)
                 {
                     if (inspectedType == null || inspectedType == typeof(object))
-                        throw new InvalidTypeException("Type must be a class and derive from required type.", requiredBaseType, genericControllerType);
+                        throw new InvalidTypeException("Type must be a class and derive from required base type.", requiredBaseType, genericControllerType);
 
                     if (inspectedType.IsGenericType && requiredBaseType == inspectedType.GetGenericTypeDefinition())
                     {
@@ -68,14 +68,19 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
                         {
                             Type constructedGenericControllerType;
 
-                            if (service.ServiceType.GenericTypeArguments.Length > 1 && genericControllerType.GetGenericArguments().Length > 1)
-                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, service.ServiceType.GenericTypeArguments[1]);
-                            else if (genericControllerType.GetGenericArguments().Length > 1)
-                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, typeof(Unit));
-                            else if (service.ServiceType.GenericTypeArguments.Length > 1 && service.ServiceType.GenericTypeArguments[1] == typeof(Unit))
-                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType);
-                            else
-                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType);
+                            try
+                            {
+                                if (service.ServiceType.GenericTypeArguments.Length > 1 && genericControllerType.GetGenericArguments().Length > 1)
+                                    constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, service.ServiceType.GenericTypeArguments[1]);
+                                else if (genericControllerType.GetGenericArguments().Length > 1)
+                                    constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, typeof(Unit));
+                                else
+                                    constructedGenericControllerType = genericControllerType.MakeGenericType(requestType);
+                            }
+                            catch (Exception e)
+                            {
+                                throw new InvalidTypeException("Error while constructing generic controller type. Make sure provided generic controller type definition corresponds to definition of required base type.", e, requiredBaseType, genericControllerType);
+                            }
 
                             feature.Controllers.Add(constructedGenericControllerType.GetTypeInfo());
                         }

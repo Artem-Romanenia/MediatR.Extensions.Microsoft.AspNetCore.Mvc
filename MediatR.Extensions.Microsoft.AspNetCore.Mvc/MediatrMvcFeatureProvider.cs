@@ -68,10 +68,12 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
                         {
                             Type constructedGenericControllerType;
 
-                            if (service.ServiceType.GenericTypeArguments.Length > 1)
+                            if (service.ServiceType.GenericTypeArguments.Length > 1 && genericControllerType.GetGenericArguments().Length > 1)
                                 constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, service.ServiceType.GenericTypeArguments[1]);
-                            else if (genericControllerType.GenericTypeArguments.Length > 1)
+                            else if (genericControllerType.GetGenericArguments().Length > 1)
                                 constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, typeof(Unit));
+                            else if (service.ServiceType.GenericTypeArguments.Length > 1 && service.ServiceType.GenericTypeArguments[1] == typeof(Unit))
+                                constructedGenericControllerType = genericControllerType.MakeGenericType(requestType);
                             else
                                 constructedGenericControllerType = genericControllerType.MakeGenericType(requestType);
 

@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2020
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatR.Extensions.Microsoft.AspNetCore.Mvc", "MediatR.Extensions.Microsoft.AspNetCore.Mvc\MediatR.Extensions.Microsoft.AspNetCore.Mvc.csproj", "{4EAC8743-1E74-4F33-BA2A-3C30107A51F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests", "MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests\MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests.csproj", "{44CE0FAB-0DBA-44A8-8F25-EBE839AB919B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests", "MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests\MediatR.Extensions.Microsoft.AspNetCore.Mvc.Tests.csproj", "{44CE0FAB-0DBA-44A8-8F25-EBE839AB919B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{E1A2FE07-84AF-440A-AFD1-B913D6C9D4FD}"
 	ProjectSection(SolutionItems) = preProject

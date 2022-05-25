@@ -14,7 +14,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
     {
         public void Apply(ControllerModel controller)
         {
-            var requiredBaseType = typeof(MediatrMvcGenericController<,>);
+            var requiredBaseType = typeof(MediatrMvcGenericControllerBase<,>);
             var inspectedType = controller.ControllerType as Type;
 
             while (inspectedType != null && inspectedType != typeof(object))

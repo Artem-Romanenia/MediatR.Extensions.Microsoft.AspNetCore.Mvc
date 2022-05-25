@@ -22,7 +22,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
         /// Constructs feature provider instance
         /// </summary>
         /// <param name="services">Services</param>
-        /// <param name="provideGenericControllerType">Provides controller type to be added based on <see cref="IRequest{TResponse}"/> type. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericController{TRequest,TResponse}"/>.</param>
+        /// <param name="provideGenericControllerType">Provides controller type to be added based on <see cref="IRequest{TResponse}"/> type. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericControllerBase{TRequest,TResponse}"/>.</param>
         /// <param name="applySettings">An action that configures generic controller feature provider settings.</param>
         public MediatrMvcFeatureProvider(IServiceCollection services, Func<Type, Type> provideGenericControllerType = null, Action<Settings> applySettings = null)
         {
@@ -51,7 +51,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
                     _provideGenericControllerType?.Invoke(requestType) ??
                     typeof(MediatrMvcGenericController<,>);
 
-                var requiredBaseType = typeof(MediatrMvcGenericController<,>);
+                var requiredBaseType = typeof(MediatrMvcGenericControllerBase<,>);
                 var inspectedType = genericControllerType;
 
                 while (true)
@@ -94,7 +94,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
         }
 
         /// <summary>
-        /// Provides controller type to be added based on <see cref="IRequest{TResponse}"/> type. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericController{TRequest,TResponse}"/>.
+        /// Provides controller type to be added based on <see cref="IRequest{TResponse}"/> type. Provided type must be a generic type definition and derive from <see cref="MediatrMvcGenericControllerBase{TRequest,TResponse}"/>.
         /// </summary>
         /// <param name="requestType"></param>
         /// <returns></returns>

@@ -2,7 +2,7 @@
 
 namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions
 {
-    public class InvalidTypeException : Exception
+    internal class InvalidTypeException : Exception
     {
         private readonly Type requiredType;
         private readonly Type providedType;

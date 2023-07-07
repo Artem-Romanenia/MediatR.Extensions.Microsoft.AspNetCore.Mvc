@@ -46,23 +46,24 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
             ))
             {
                 var requestType = service.ServiceType.GenericTypeArguments[0];
+                var voidRequest = service.ServiceType.GenericTypeArguments.Length == 1;
 
                 var genericControllerType = ProvideGenericControllerType(requestType) ??
                     _provideGenericControllerType?.Invoke(requestType) ??
-                    typeof(MediatrMvcGenericController<,>);
+                    (voidRequest ? typeof(MediatrMvcGenericController<>) : typeof(MediatrMvcGenericController<,>));
 
-                var requiredBaseType = typeof(MediatrMvcGenericControllerBase<,>);
+                var allowedTypes = new [] { typeof(MediatrMvcGenericControllerBase<,>), typeof(MediatrMvcGenericControllerBase<>) };
                 var inspectedType = genericControllerType;
 
                 while (true)
                 {
                     if (inspectedType == null || inspectedType == typeof(object))
-                        throw new InvalidTypeException("Type must be a class and derive from required base type.", requiredBaseType, genericControllerType);
+                        throw new InvalidTypeException("Type must be a class and derive from required base type.", genericControllerType);
 
-                    if (inspectedType.IsGenericType && requiredBaseType == inspectedType.GetGenericTypeDefinition())
+                    if (inspectedType.IsGenericType && allowedTypes.Contains(inspectedType.GetGenericTypeDefinition()))
                     {
                         if (!genericControllerType.IsGenericTypeDefinition)
-                            throw new InvalidTypeException("Type must be generic type definition.", requiredBaseType, genericControllerType);
+                            throw new InvalidTypeException("Type must be generic type definition.", genericControllerType, allowedTypes);
 
                         if (!ShouldSkip(requestType) && !ShouldSkipInternal(feature.Controllers, requestType))
                         {
@@ -70,7 +71,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
 
                             try
                             {
-                                if (service.ServiceType.GenericTypeArguments.Length > 1 && genericControllerType.GetGenericArguments().Length > 1)
+                                if (!voidRequest && genericControllerType.GetGenericArguments().Length > 1)
                                     constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, service.ServiceType.GenericTypeArguments[1]);
                                 else if (genericControllerType.GetGenericArguments().Length > 1)
                                     constructedGenericControllerType = genericControllerType.MakeGenericType(requestType, typeof(Unit));
@@ -79,7 +80,7 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
                             }
                             catch (Exception e)
                             {
-                                throw new InvalidTypeException("Error while constructing generic controller type. Make sure provided generic controller type definition corresponds to definition of required base type.", e, requiredBaseType, genericControllerType);
+                                throw new InvalidTypeException("Error while constructing generic controller type. Make sure provided generic controller type definition corresponds to definition of required base type.", e, genericControllerType, allowedTypes);
                             }
 
                             feature.Controllers.Add(constructedGenericControllerType.GetTypeInfo());

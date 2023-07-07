@@ -1,30 +1,43 @@
 ﻿using System;
+using System.Linq;
 
 namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc.Exceptions
 {
     internal class InvalidTypeException : Exception
     {
-        private readonly Type requiredType;
+        private readonly Type[]? allowedTypes;
         private readonly Type providedType;
 
-        public InvalidTypeException(Type requiredType, Type providedType) : base()
+        public InvalidTypeException(Type providedType, Type[]? allowedTypes = null) : base()
         {
-            this.requiredType = requiredType;
+            this.allowedTypes = allowedTypes;
             this.providedType = providedType;
         }
 
-        public InvalidTypeException(string message, Type requiredType, Type providedType) : base(message)
+        public InvalidTypeException(string message, Type providedType, Type[]? allowedTypes = null) : base(message)
         {
-            this.requiredType = requiredType;
+            this.allowedTypes = allowedTypes;
             this.providedType = providedType;
         }
 
-        public InvalidTypeException(string message, Exception inner, Type requiredType, Type providedType) : base(message, inner)
+        public InvalidTypeException(string message, Exception inner, Type providedType, Type[]? allowedTypes = null) : base(message, inner)
         {
-            this.requiredType = requiredType;
+            this.allowedTypes = allowedTypes;
             this.providedType = providedType;
         }
 
-        public override string Message => $"{base.Message}{Environment.NewLine}Provided Type: {providedType.FullName}. Required type: {requiredType.FullName}";
+        public override string Message
+        {
+            get
+            {
+                var message = $"{base.Message}{Environment.NewLine}Provided Type: {providedType.FullName}.";
+                if (allowedTypes != null)
+                {
+                    message += $"{Environment.NewLine}Allowed types:{Environment.NewLine}{string.Join(Environment.NewLine, allowedTypes.Select(t => t.FullName))}";
+                }
+
+                return message;
+            }
+        }
     }
 }

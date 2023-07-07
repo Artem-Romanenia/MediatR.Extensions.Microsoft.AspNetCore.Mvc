@@ -14,12 +14,12 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
     {
         public void Apply(ControllerModel controller)
         {
-            var requiredBaseType = typeof(MediatrMvcGenericControllerBase<,>);
+            var allowedTypes = new[] { typeof(MediatrMvcGenericControllerBase<,>), typeof(MediatrMvcGenericControllerBase<>) };
             var inspectedType = controller.ControllerType as Type;
 
             while (inspectedType != null && inspectedType != typeof(object))
             {
-                if (inspectedType.IsGenericType && requiredBaseType == inspectedType.GetGenericTypeDefinition())
+                if (inspectedType.IsGenericType && allowedTypes.Contains(inspectedType.GetGenericTypeDefinition()))
                 {
                     ApplyInner(controller);
                     return;
@@ -89,6 +89,8 @@ namespace MediatR.Extensions.Microsoft.AspNetCore.Mvc
                     {
                         foreach (var constraint in httpMethodActionConstraints)
                         {
+                            if (constraint == null) continue;
+
                             var verbs = new List<string>(requestTypeVerbs);
                             verbs.AddRange(constraint.HttpMethods);
 
